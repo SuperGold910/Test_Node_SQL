@@ -1,0 +1,150 @@
+<html>
+<head>
+
+<style>
+.search {
+  width: 15em;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+#results {
+  width: 15em;
+  display: grid;
+  grid-template-columns: 1fr;
+  background-color: lightgray;
+}
+.user {
+  display: grid;
+  grid-template-columns: 1.2fr 5fr 3fr;
+  align-items: center;
+
+  height: 2em;
+  width: 90%;
+  border-radius: 1em;
+  border-width: 2px;
+  border-style: solid;
+  background-color: white;
+  margin-top: 2px;
+  margin-left: 10px;
+}
+.userName {
+  height: 1em;
+  margin-left: 0.5em;
+}
+.connection {
+  height: 1em;
+  margin-left: 0.5em;
+
+  border-radius: 0.5em;
+  border-width: 1px;
+  border-style: solid;
+  background-color: white;
+}
+.hide {
+  height: 1em;
+  margin-left: 0.5em;
+}
+.button {
+  height: 1em;
+  margin-right: 0.5em;
+
+  border-radius: 0.5em;
+  border-width: 1px;
+  border-style: solid;
+  background-color: white;
+
+  text-align: center;
+  user-select: none;
+  cursor: pointer;
+}
+
+.button:hover {
+  background-color: lightgray;
+}
+
+.button:active {
+  background-color: rgb(182, 189, 192);
+}
+
+.error {
+  height: 25em;
+  width: 100%;
+  background-color: lightred;
+}
+</style>
+
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script language='JavaScript'>
+function ConnectionText(connection) {
+  if (!connection) {
+    return '&nbsp';
+  } else if (connection < 4) {
+    return ['1st', '2nd', '3rd'][connection - 1];
+  } else {
+    return `${connection}th`;
+  }
+}
+
+function RenderUser(container, user) {
+  const div = document.createElement('div');
+  div.classList.add('user');
+  const cls = user.connection ? 'connection' : 'hide';
+  const con = ConnectionText(user.connection);
+
+  div.innerHTML = `<div class='${cls}'>${con}</div><div class='userName'>${user.name}</div>`;
+  const button = document.createElement('div');
+  button.innerHTML = (user.connection === 1) ? 'Remove' : 'Add';
+  button.classList.add('button');
+  button.addEventListener('click', () => {
+    const cmd = (user.connection === 1) ? 'unfriend' : 'friend';
+    const userId = document.getElementById('user').value;
+    axios.get(`http://localhost:3001/api/${cmd}/${userId}/${user.id}`).then((response) => {
+      Search();
+    });
+  });
+  div.appendChild(button);
+  container.appendChild(div);
+}
+
+function RenderError(container, error) {
+  const div = document.createElement('div');
+  div.classList.add('error');
+  div.innerHTML = `ERROR: ${error}`;
+  container.appendChild(div);
+}
+
+function Render(data) {
+  const div = document.getElementById('results');
+  div.innerHTML = '';
+
+  if (data.success) {
+    data.users.forEach((user) => RenderUser(div, user));
+  } else {
+    RenderError(div, data.error);
+  }
+}
+
+function Search() {
+  const userId = document.getElementById('user').value;
+  const search = document.getElementById('search').value;
+
+  axios.get(`http://localhost:3001/api/search/${userId}/${search}`).then((response) => {
+    Render(response.data);
+  }).catch((err) => {
+    const div = document.getElementById('results');
+    div.innerHTML = '';
+    RenderError(div, err);
+  });
+}
+</script>
+</head>
+
+<body>
+<div class='search'>
+<div>User Id:</div><div><input id='user' value='1337'/></div>
+<div>Search:</div><div><input id='search' onchange='Search()' onkeyup='Search()'/></div>
+</div>
+<div id='results'>
+</div>
+</body>
+</html>
